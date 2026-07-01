@@ -1,10 +1,10 @@
 """Extract the four PPG waveform features from one 30-s window of a finger pleth (PPG) signal.
 
 These four — pulse amplitude, systolic upstroke time, pleth-variability index, and pulsus-alternans
-power — plus two chart values (height, ASA) are the whole model. Only the pulse foot, systolic peak
+power — plus one chart value (height) are the whole model. Only the pulse foot, systolic peak
 and amplitude are needed, so the per-beat processing is deliberately simple (no dicrotic-notch or
 2nd-derivative analysis). The per-window values are taken as the median over a patient's clean
-windows (see build.py); the demographics/clinical values come from the VitalDB clinical table.
+windows (see build.py); the height value comes from the VitalDB clinical table.
 """
 import numpy as np
 from scipy.signal import butter, sosfiltfilt, find_peaks

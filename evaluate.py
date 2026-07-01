@@ -7,9 +7,9 @@ import csv
 import numpy as np
 from cvp.model import evaluate, THRESHOLD
 
-FEATURES = ["ppg_alternans", "ppg_ac_amp", "ppg_upstroke", "ppg_pvi", "height", "asa"]
+FEATURES = ["ppg_alternans", "ppg_ac_amp", "ppg_upstroke", "ppg_pvi", "height"]
 # order in which features are added for the parsimony frontier (most informative first)
-FRONTIER = ["ppg_alternans", "asa", "ppg_ac_amp", "ppg_upstroke", "height", "ppg_pvi"]
+FRONTIER = ["ppg_pvi", "ppg_alternans", "ppg_ac_amp", "ppg_upstroke", "height"]
 
 
 def load(path="data/features.csv"):
@@ -28,7 +28,7 @@ def main():
           f"({100*npos/len(cases):.1f}% prevalence)\n")
 
     full = evaluate(mat(FEATURES), y, cases, reps=40)
-    print(f"FULL 6-feature model:  AUC = {full['auc']:.3f}  [90% CI {full['ci90'][0]:.3f}-{full['ci90'][1]:.3f}]"
+    print(f"FULL 5-feature model:  AUC = {full['auc']:.3f}  [90% CI {full['ci90'][0]:.3f}-{full['ci90'][1]:.3f}]"
           f"   Sens {full['sens']:.2f} / Spec {full['spec']:.2f}\n")
 
     print("parsimony frontier (add one feature at a time):")
