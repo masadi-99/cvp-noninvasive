@@ -66,12 +66,26 @@ in [cvp/build.py](cvp/build.py)).
 - **Population.** VitalDB surgical patients; elevated-CVP cases are enriched for fluid-overload /
   transplant physiology. External validation on a separate population is needed before any clinical use.
 
+## Enhancement studies
+
+Four proposed additions were tested under the same CV — see [enhancements/](enhancements/). Three do
+not help (lower CVP threshold → ~0.66; windows-as-samples → ~0.53; invasive arterial BP → 0.745), and
+one does: a **categorical PPG-morphology feature (Dawber 4-class)** gives **0.754 → 0.780 (+0.026)**,
+Sensitivity 0.68 → 0.75. All are reproducible from the repo:
+
+```bash
+python enhancements/reproduce.py            # threshold, arterial BP, morphology
+python enhancements/reproduce_windowing.py  # windows-as-samples (a few minutes)
+```
+
 ## Layout
 
 ```
-cvp/extract.py   four PPG features from one 30-s window
-cvp/model.py     Ridge + HistGradientBoosting ensemble, repeated nested grouped CV
-cvp/build.py     raw VitalDB cases -> data/features.csv
-evaluate.py      features.csv -> AUC + parsimony frontier
+cvp/extract.py     four PPG features from one 30-s window
+cvp/model.py       Ridge + HistGradientBoosting ensemble, repeated nested grouped CV
+cvp/build.py       raw VitalDB cases -> data/features.csv
+evaluate.py        features.csv -> AUC + parsimony frontier
 data/features.csv  per-patient features + CVP label (304 rows)
+enhancements/      four enhancement studies (arterial BP, windowing, morphology, threshold),
+                   self-contained data + runnable reproductions + research scripts
 ```
