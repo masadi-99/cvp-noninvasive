@@ -11,7 +11,7 @@ CVP > 12 (304 patients / 40 elevated).
 |---|---|---|---|
 | A | Lower the CVP threshold (9/8/7 mmHg) for a balanced cohort | AUC falls to **~0.66** | ✗ worse |
 | B | Treat each 30-s window as its own training sample | collapses to **~0.53** (random-window CV leaks to 0.90) | ✗ worse |
-| C | Add invasive arterial-line systolic/diastolic/mean BP | 0.754 → **0.745** (paired Δ = −0.010, t = −3.7) | ✗ no help |
+| C | Add invasive arterial-line BP — sys/dia/mean **and** 15 rich waveform features | 0.754 → **0.745** (numerics); **~0.68** (rich waveform, hurts) | ✗ no help |
 | D | Add a categorical PPG-morphology feature (Dawber 4-class) | 0.754 → **0.780** (+0.026, t = 13.2, perm p < 0.001) | ✔ **small gain** |
 
 ## Reproduce
@@ -20,14 +20,16 @@ Everything here runs from two self-contained data files (no raw signals needed):
 
 ```bash
 pip install -r ../requirements.txt
-python enhancements/reproduce.py            # studies A (threshold), C (arterial BP), D (morphology)
-python enhancements/reproduce_windowing.py  # study B (windowing) — takes a few minutes
+python enhancements/reproduce.py                    # studies A (threshold), C (arterial BP), D (morphology)
+python enhancements/reproduce_windowing.py          # study B (windowing) — takes a few minutes
+python enhancements/reproduce_arterial_waveform.py  # study C rich waveform-morphology extension
 ```
 
 - `data/features_ext.csv` — per-patient: the 5 model features + arterial numerics + Dawber class
   fractions + CVP (304 rows).
 - `data/windows.csv` — per-window: the 5 features + arterial numerics + per-window CVP (8,909 rows),
   used by the windowing study.
+- `data/artwave_features.csv` — per-patient: the 15 rich arterial-waveform features + CVP (304 rows).
 
 Both are derived once from the full VitalDB pipeline; the scripts above reproduce every headline
 number from them using the repo's own Ridge + HistGradientBoosting ensemble (`cvp.model`).
@@ -52,6 +54,16 @@ Grouped-by-patient CV is essential: random-window CV leaks to 0.90.
 of the cohort) are uncorrelated with CVP (|r| ≤ 0.09) and each is ≈ chance alone (AUC 0.42–0.58).
 Adding them mildly *hurts* (0.754 → 0.745). Arterial pressure is systemic afterload, not venous
 preload.
+
+*Waveform-morphology extension.* Because the simple numerics could be "too simplistic," we also
+extracted **15 rich arterial-pressure WAVEFORM features analogous to the PPG set** — upstroke time,
+systolic/notch fractions, augmentation index, dicrotic-notch height, systolic/diastolic area ratio,
+Windkessel decay τ, pulse width, max dP/dt (up/down), reflected-wave transit, arterial pulsus
+alternans, amplitude CV, PPV, SPV (`research/artwave.py`). Every one is near-chance (single-feature
+AUC 0.44–0.64, correlations |r| ≤ 0.11), and adding them **significantly hurts** the model
+(0.754 → ~0.68; paired t = −17.9, 0% of splits improve). So the null is not an artifact of simplistic
+features — arterial waveform *shape* carries no CVP signal either. (`reproduce_arterial_waveform.py`,
+`data/artwave_features.csv`.)
 
 **D — categorical PPG morphology (Dawber 4-class).** Graded by dicrotic-notch development
 (class 1 = notch present → class 4 = fully damped). The per-patient **class fractions** help: the

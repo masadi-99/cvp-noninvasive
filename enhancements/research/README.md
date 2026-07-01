@@ -13,5 +13,6 @@ For runnable, self-contained reproductions of every result, use `../reproduce.py
 | `enh.py` | shared harness (merged per-window matrix + threshold-parameterized nested grouped CV) |
 | `study_a_threshold.py` | A — CVP-threshold sweep |
 | `study_b_perwindow.py`, `study_b_audit.py`, `study_b_clean.py`, `study_b_fix.py`, `study_b_winpred.py`, `study_b_diag.py` | B — windows-as-samples + full audit/decomposition |
-| `study_c_arterial.py` | C — invasive arterial BP |
+| `study_c_arterial.py` | C — invasive arterial BP (systolic/diastolic/mean numerics) |
+| `artwave.py`, `study_e_build.py`, `study_e_eval.py`, `study_e_artwave.py` | C — rich arterial-pressure WAVEFORM morphology (15 features analogous to the PPG set) |
 | `dawber.py`, `study_d_build.py`, `study_d_eval.py`, `study_d_robust.py`, `study_d_f4.py` | D — Dawber morphology classifier + evaluation |
