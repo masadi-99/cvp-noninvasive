@@ -31,7 +31,8 @@ python enhancements/reproduce_arterial_waveform.py  # study C rich waveform-morp
   used by the windowing study.
 - `data/artwave_features.csv` — per-patient: the 15 rich arterial-waveform features + CVP (304 rows).
 
-Both are derived once from the full VitalDB pipeline; the scripts above reproduce every headline
+The first two are derived once from the full VitalDB pipeline (generator:
+`research/gen_repo_data.py`, provenance-only); the scripts above reproduce every headline
 number from them using the repo's own Ridge + HistGradientBoosting ensemble (`cvp.model`).
 
 ## What each study found

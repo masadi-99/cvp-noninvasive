@@ -10,6 +10,7 @@ For runnable, self-contained reproductions of every result, use `../reproduce.py
 
 | file | study |
 |---|---|
+| `gen_repo_data.py` | provenance — the exact script that generated the shipped `../data/features_ext.csv` and `../data/windows.csv` from the full private pipeline |
 | `enh.py` | shared harness (merged per-window matrix + threshold-parameterized nested grouped CV) |
 | `study_a_threshold.py` | A — CVP-threshold sweep |
 | `study_b_perwindow.py`, `study_b_audit.py`, `study_b_clean.py`, `study_b_fix.py`, `study_b_winpred.py`, `study_b_diag.py` | B — windows-as-samples + full audit/decomposition |
