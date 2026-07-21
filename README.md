@@ -78,7 +78,29 @@ python enhancements/reproduce.py            # threshold, arterial BP, morphology
 python enhancements/reproduce_windowing.py  # windows-as-samples (a few minutes)
 ```
 
+## Follow-up studies
+
+A later round probed the model's design and scope — see [followup_studies/](followup_studies/)
+(provenance only; scripts ran against the full private pipeline). In brief: **30 s is the optimal
+analysis window**; the **ECG quality gate cannot be dropped** (it is a load-bearing artifact filter —
+dropping it grows the cohort 304 → 357 but collapses AUC to chance); and **CVP is the only
+hemodynamic target the PPG waveform genuinely predicts** — apparent Cardiac-Output / Stroke-Volume
+prediction was a body-size/sex artifact. A confounder audit found CVP has real clinical correlates but
+the PPG signal is independent of them (no sex/size confound).
+
 ## Layout
+
+```
+cvp/extract.py     four PPG features from one 30-s window
+cvp/model.py       Ridge + HistGradientBoosting ensemble, repeated nested grouped CV
+cvp/build.py       raw VitalDB cases -> data/features.csv
+evaluate.py        features.csv -> AUC + parsimony frontier
+data/features.csv  per-patient features + CVP label (304 rows)
+enhancements/      four enhancement studies (arterial BP, windowing, morphology, threshold),
+                   self-contained data + runnable reproductions + research scripts
+followup_studies/  window length, PPG-only gating, other outcomes, confounder audit
+                   (provenance only — not runnable from this repo)
+```
 
 ```
 cvp/extract.py     four PPG features from one 30-s window
