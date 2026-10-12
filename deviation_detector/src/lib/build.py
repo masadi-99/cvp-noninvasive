@@ -102,7 +102,7 @@ class VitalDB:
             self.QP = {int(c): np.asarray(p, float) for c, p in zip(z["cid"], z["pred"])}
 
 
-def build_vitaldb(V, W=W_CAL, S=S_TRACK, dense=True, tracker=True, causal_offset=False):
+def build_vitaldb(V, W=W_CAL, S=S_TRACK, dense=True, tracker=True, causal_offset=False, filter_span="full"):
     """Stretches for every VitalDB patient. Baseline and block shape come from the DENSE grid,
     aligned to the label's units by ONE scalar per patient: the median of (gated label - dense
     tile) over all of that patient's gated windows, whole case. That scalar shifts baseline and
@@ -111,7 +111,9 @@ def build_vitaldb(V, W=W_CAL, S=S_TRACK, dense=True, tracker=True, causal_offset
     uses the gated block only (the generic builder's behaviour), tracker=False zeroes the
     tracker columns. causal_offset=True recomputes the alignment scalar per block from the gated
     windows up to the end of that block only (strictly causal label; falls back to the gated
-    block when fewer than 3 such windows exist)."""
+    block when fewer than 3 such windows exist). filter_span: what the artefact-step filter scans,
+    "full" = read + tracking (the reported system), "read" = the read period only, "none" = off."""
+    assert filter_span in ("full", "read", "none"), filter_span
     R = {}
     for c in sorted(V.ORDER):
         o = V.ORDER[c]
@@ -146,7 +148,7 @@ def build_vitaldb(V, W=W_CAL, S=S_TRACK, dense=True, tracker=True, causal_offset
                 dd = desc(t[bm], y[bm]); base = float(np.median(y[bm])); nd = bm.sum()
             else: continue
             idx = np.where(sm)[0]
-            if worst_step(u, yd, t0b, float(t[idx][-1])) > MAX_STEP: continue
+            if filter_span != "none" and worst_step(u, yd, t0b, t1b if filter_span == "read" else float(t[idx][-1])) > MAX_STEP: continue
             since = t[idx] - t1b; gap = float(t[idx][0] - t1b)
             H = hist[-1] if hist else None
             rate = ((base - H[1]) / max(t1b - H[0], 1e-3)) if H else np.nan
@@ -164,9 +166,12 @@ def build_vitaldb(V, W=W_CAL, S=S_TRACK, dense=True, tracker=True, causal_offset
 
 
 # ---- any record with (t, y, X): MIMIC, and VitalDB when it must match MIMIC exactly ------------
-def build_record(t, y, X, key, W=W_CAL, S=S_TRACK, extra=None):
+def build_record(t, y, X, key, W=W_CAL, S=S_TRACK, extra=None, max_step=MAX_STEP, filter_span="full"):
     """Lay the schedule on one record's own clock. Baseline and block shape from the block's own
-    windows; tracker columns zero. `extra` = dict of per-window arrays carried along (e.g. MAP)."""
+    windows; tracker columns zero. `extra` = dict of per-window arrays carried along (e.g. MAP).
+    `max_step` is the artefact-filter step in the label's units (3 mmHg for CVP); `filter_span` as in
+    build_vitaldb ("full" / "read" / "none")."""
+    assert filter_span in ("full", "read", "none"), filter_span
     out = []
     if len(t) < 12: return out
     o = np.argsort(t); t, y, X = t[o], y[o], X[o]
@@ -182,7 +187,7 @@ def build_record(t, y, X, key, W=W_CAL, S=S_TRACK, extra=None):
         if not np.isfinite(yb).all() or bm.sum() < 4: continue
         dd = desc(tb, yb); base = float(np.median(yb))
         idx = np.where(sm)[0]
-        if worst_step(t, y, float(tb[0]), float(t[idx][-1])) > MAX_STEP: continue
+        if filter_span != "none" and worst_step(t, y, float(tb[0]), float(tb[-1]) if filter_span == "read" else float(t[idx][-1])) > max_step: continue
         since = t[idx] - tb[-1]; gap = float(t[idx][0] - tb[-1])
         H = hist[-1] if hist else None
         rate = ((base - H[1]) / max(tb[-1] - H[0], 1e-3)) if H else np.nan
@@ -223,7 +228,7 @@ def cvp_gate_mask(key, n):
     return (sd >= 0.5) & (sd <= 12.0) & (run <= 2.0) & (pul >= 0.5)
 
 
-def load_mimic(src=None, W=W_CAL, S=S_TRACK, extra=False, subset="paper"):
+def load_mimic(src=None, W=W_CAL, S=S_TRACK, extra=False, subset="paper", filter_span="full"):
     R = {}
     for p in mimic_files(subset):
         key = os.path.basename(p).replace(".npz", "")
@@ -231,18 +236,18 @@ def load_mimic(src=None, W=W_CAL, S=S_TRACK, extra=False, subset="paper"):
         z = np.load(p, allow_pickle=True); ok = cvp_gate_mask(key, len(z["t"]))
         ex = {"map": z["map"][ok]} if extra and "map" in z.files else None
         ss = build_record(z["t"].astype(float)[ok], z["y"].astype(float)[ok], z["X"].astype(float)[ok], key,
-                          W, S, extra=ex)
+                          W, S, extra=ex, filter_span=filter_span)
         if ss: R[key] = ss
     return R
 
 
-def load_vitaldb_generic(V, W=W_CAL, S=S_TRACK):
+def load_vitaldb_generic(V, W=W_CAL, S=S_TRACK, filter_span="full"):
     """VitalDB through the record builder: what the MIMIC-facing model is trained on."""
     R = {}
     for c in sorted(V.ORDER):
         o = V.ORDER[c]
         if len(o) < 12: continue
-        ss = build_record(V.T[o], V.Y[o], V.X[o], f"vitaldb_{c}", W, S)
+        ss = build_record(V.T[o], V.Y[o], V.X[o], f"vitaldb_{c}", W, S, filter_span=filter_span)
         if ss: R[f"vitaldb_{c}"] = ss
     return R
 

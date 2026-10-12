@@ -26,3 +26,4 @@ $PY src/s18_one_feature_horizons.py                        # results/one_feature
 $PY src/s19_mimic_cvp_gate.py measure && $PY src/s19_mimic_cvp_gate.py score   # results/mimic_gated.json
 $PY src/s20_ablate_spread.py                               # results/ablate_spread.json
 $PY src/s12_figures.py all                                 # figures/f*.png
+bash scripts/run_followup.sh                               # steps 21-32 on the gated variant (after scripts/run_gated.sh)
